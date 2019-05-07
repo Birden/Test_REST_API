@@ -7,59 +7,39 @@ using System.Threading.Tasks;
 using Nancy;
 using Nancy.Hosting.Self;
 using Nancy.ModelBinding;
+using Querys;
 
 namespace NancyPerson
 {
+
     
 
-    public class Person
-    {
-        public int id { get; set; }
-        public string name { get; set; }
-        public int age { get; set; }
-    }
-    public class JSON_pers
-    {
-        public string name;
-        public string BirthDay;
-    }
 
     public class TestNancy : NancyModule
     {
-        static List<Person> pList = new List<Person>();
-        static int lcnt = 0;
+        public class JSON_pers
+        {
+            public string name;
+            public string BirthDay;
+        }
+        Person pr = new Person();
 
         public TestNancy()
         {
             Get("/", args => 
             {
                 
-                return "Count: " + pList.Count().ToString();
+                return "Count: ";
             });
             Post("/person", args =>
             {
                 JSON_pers jpr = this.Bind<JSON_pers>();
-                int age = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(jpr.BirthDay)).TotalDays / 365);
+                string name = jpr.name;
+                DateTime bDay = Convert.ToDateTime(jpr.BirthDay);
+                int? res = pr.CreatePerson(name, bDay);
 
-                if (jpr.name == "")
-                {
-                    return "Badrequest (invalid name)";
-                } else if (age < 1 || age > 120 )
-                {
-                    return "Badrequest (invalid birthday)";
-                } else 
-                {
-                    Person pr = new Person()
-                    {
-                        id = ++lcnt,
-                        name = jpr.name,
-                        age = age
-                    };
-                    pList.Add(pr);
-                    Console.WriteLine("Binding: id " + pr.id + " " + pr.name + " " + pr.age.ToString());
-                    return "Created:  " + pr.name + " age " + pr.age.ToString();
-                }
-                
+                Console.WriteLine("Created:" + res);
+                return "Created";
             });
                         
         }

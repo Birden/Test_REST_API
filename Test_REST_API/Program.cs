@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-//using Nancy;
+using System.Data.SQLite;
 
-namespace Test_REST_API
+namespace Queries
 {
     class Program
     {
@@ -36,10 +36,6 @@ namespace Test_REST_API
                 return 0;
             }
         }
-        //static Person Find()
-        //{
-
-        //}
 
         static void PersonList()
         {
@@ -49,12 +45,6 @@ namespace Test_REST_API
 
         static void Main(string[] args)
         {
-            CreatePerson("Alex", Convert.ToDateTime("01.01.1980"));
-            CreatePerson("Tom", Convert.ToDateTime("01.01.1927"));
-            CreatePerson("Bob", Convert.ToDateTime("01.01.1870"));
-            CreatePerson("Hank", Convert.ToDateTime("01.01.2010"));
-            PersonList();
-            Console.ReadKey();
         }
     }
 }

@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.572
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Service", "Test_REST_API\Service.csproj", "{CBA8EC1A-FB29-48E2-A0B7-CE560D5E76C9}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Persons", "NancyPerson\Persons.csproj", "{2DAE9D86-76D1-4698-A115-DA9EF90D6B4A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Querys", "Querys\Querys.csproj", "{589B5F81-CE90-411F-B22E-AB04F9D2E63B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,14 +13,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{CBA8EC1A-FB29-48E2-A0B7-CE560D5E76C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CBA8EC1A-FB29-48E2-A0B7-CE560D5E76C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CBA8EC1A-FB29-48E2-A0B7-CE560D5E76C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CBA8EC1A-FB29-48E2-A0B7-CE560D5E76C9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2DAE9D86-76D1-4698-A115-DA9EF90D6B4A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2DAE9D86-76D1-4698-A115-DA9EF90D6B4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2DAE9D86-76D1-4698-A115-DA9EF90D6B4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2DAE9D86-76D1-4698-A115-DA9EF90D6B4A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{589B5F81-CE90-411F-B22E-AB04F9D2E63B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{589B5F81-CE90-411F-B22E-AB04F9D2E63B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{589B5F81-CE90-411F-B22E-AB04F9D2E63B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{589B5F81-CE90-411F-B22E-AB04F9D2E63B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
