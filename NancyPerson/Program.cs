@@ -9,32 +9,45 @@ using Nancy;
 using Nancy.Hosting.Self;
 using Nancy.ModelBinding;
 using System.Data.SQLite;
+using System.Data;
 //using Querys;
 
 namespace NancyPerson
 {
     public class Person
     {
-        static int id_count = 0;
-        string db_name = "person_db.sqlite";
-        SQLiteConnection sqlConn;
-        SQLiteCommand sqlCmd;
+        static string db_name = "person_db.sqlite";
+        static SQLiteConnection sqlConn = new SQLiteConnection();
+        static SQLiteCommand sqlCmd = new SQLiteCommand();
         static bool db_connected = false;
 
-        public int? CreateDB()
+        public string name;
+        public int age;
+
+        public int? ConnectDB()
         {
+            
             if (!File.Exists(db_name))
             {
                 SQLiteConnection.CreateFile(db_name);
+                Console.WriteLine("File for DB created");
             }
             try
             {
                 sqlConn = new SQLiteConnection("Data source=" + db_name + ";Version=3;");
                 sqlConn.Open();
                 sqlCmd.Connection = sqlConn;
-                sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Persons (id INTEGER name TEXT age INTEGER)";
-                sqlCmd.ExecuteNonQuery();
-                db_connected = true;
+
+                sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Persons (id TEXT, name TEXT, age INTEGER);";
+                if (sqlCmd.ExecuteNonQuery() != 0)
+                {
+                    db_connected = true;
+                    Console.WriteLine("Table created");
+                }
+                else
+                {
+                    Console.WriteLine("Table not created");
+                }
             }
             catch (SQLiteException ex)
             {
@@ -44,42 +57,72 @@ namespace NancyPerson
             return 0;
         }
 
-        public int InsertPerson(int id, string name, int age)
+        public int InsertPerson(string id, string name, int age)
         {
-            string sqlQuery;
+            int res = 0;
             if (!db_connected)
             {
-                CreateDB();
+                ConnectDB();
             }
-            else
+            try
             {
-                try
-                {
-                    sqlQuery = "INSERT INTO Persons ('id','name','age') values ('" + id + "','" + name + "','" + age.ToString() + "')";
-                    sqlCmd.CommandText = sqlQuery;
-                    sqlCmd.ExecuteNonQuery();
-                }
-                catch (SQLiteException ex)
-                {
-                    Console.WriteLine("Insert error: " + ex.Message);
-                }
+                string sqlQuery = "INSERT INTO Persons (id,name,age) values ('" + id + "','" + name + "'," + age.ToString() + ");";
+                sqlCmd.CommandText = sqlQuery;
+                sqlCmd.ExecuteNonQuery();
+                Console.WriteLine("Person " + name + " inserted");
+            }
+            catch (SQLiteException ex)
+            {
+                Console.WriteLine("Insert error: " + ex.Message);
+                res = -1;
             }
 
-            return 0;
+            return res;
         }
 
         public int? CreatePerson(string name, DateTime bDay)
         {
-
+            int? res;
             int age = Convert.ToInt32((DateTime.Now - bDay).TotalDays) / 365;
             if (name == "" || age < 1 || age > 120)
             {
-                return null;
+                res = null;
+                Console.WriteLine("Invalid person params");
             }
             else
             {
-                return InsertPerson(++id_count, name, age);
+                string id = Guid.NewGuid().ToString();
+                Console.WriteLine("Person ID:" + id +" " + name + " created");
+                res = InsertPerson(id, name, age);
             }
+            return res;
+        }
+        public Person GetPerson(string id)
+        {
+            Person pr = new Person();
+            DataTable dTable = new DataTable();
+            pr.name = "";
+            if (!db_connected)
+            {
+                ConnectDB();
+            }
+            try
+            {
+                string sqlQuery = "SELECT * FROM Persons WHERE id = '" + id + "';";
+                SQLiteDataAdapter adapter = new SQLiteDataAdapter(sqlQuery, sqlConn);
+                adapter.Fill(dTable);
+                if (dTable.Rows.Count > 0)
+                {
+                    pr.name = dTable.Rows[0].ItemArray[1].ToString();
+                    pr.age = Convert.ToInt32(dTable.Rows[0].ItemArray[2]);
+                }
+                Console.WriteLine(pr.name + " " + pr.age);
+            } 
+            catch (SQLiteException ex)
+            {
+                Console.WriteLine("Read error: " + ex.Message);
+            }
+            return pr;
         }
     }
 
@@ -96,10 +139,10 @@ namespace NancyPerson
 
         public TestNancy()
         {
-            Get("/", args => 
+            Get("/{id}", args => 
             {
-                
-                return "Count: ";
+                pr = pr.GetPerson(args.id);
+                return "User: " + pr.name + " " + pr.age;
             });
             Post("/person", args =>
             {
@@ -131,7 +174,7 @@ namespace NancyPerson
                     Console.WriteLine(ex.Message);
                 }
 
-                Console.WriteLine("Nancy host start listening on localhost:8080");
+                Console.WriteLine("Nancy host start listening on localhost:8000");
                 try
                 {
                     Process.Start("http://localhost:8000");
