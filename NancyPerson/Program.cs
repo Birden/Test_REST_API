@@ -11,6 +11,8 @@ using Nancy.ModelBinding;
 using System.Data.SQLite;
 using System.Data;
 using Dapper;
+using Serilog;
+using Serilog.Sinks.SystemConsole;
 //using Querys;
 
 namespace NancyPerson
@@ -20,11 +22,10 @@ namespace NancyPerson
         public string id;
         public string name { set; get; }
         public int age { set; get; }
-        public DateTime bDay { set; get; }
+        public string bDay { set; get; }
 
         public int? Create(string name, DateTime bDay)
         {
-            int? res;
             int age = Convert.ToInt32((DateTime.Now - bDay).TotalDays) / 365;
             if (name == "" || age < 1 || age > 120)
             {
@@ -33,7 +34,7 @@ namespace NancyPerson
             {
                 this.id = Guid.NewGuid().ToString();
                 this.name = name;
-                this.bDay = bDay;
+                this.bDay = bDay.ToString("dd:MM:yyy");
                 this.age = age;
                 return 0;
             }
@@ -90,35 +91,8 @@ namespace NancyPerson
         public int? Insert(Person pr)
         {
             int? res = 0;
-            if (!db_connected)
-            {
+            if (sqlConn == null)
                 ConnectDB();
-            }
-            try
-            {
-                string sqlQuery = "INSERT INTO Persons (id,name,bDay,age) values ('" + pr.id + "','" + pr.name + "','" + pr.bDay+"',"+ pr.age.ToString() + ");";
-                Console.WriteLine(sqlQuery);
-                sqlCmd.CommandText = sqlQuery;
-                if (sqlCmd.ExecuteNonQuery() != 0)
-                {
-                    Console.WriteLine("Person " + pr.name + " inserted");
-                }
-                else
-                    res = null;
-                
-            }
-            catch (SQLiteException ex)
-            {
-                Console.WriteLine("Insert error: " + ex.Message);
-                res = null;
-            }
-
-            return res;
-        }
-
-        public int? InsertDapper(Person pr)
-        {
-            int? res = 0;
             string sqlQuery = "INSERT INTO Persons (id,name,bDay,age) values ('" + pr.id + "','" + pr.name + "','" + pr.bDay + "'," + pr.age.ToString() + ");";
             var qr = sqlConn.Query<Person>(sqlQuery);
             if (qr != null)
@@ -128,6 +102,23 @@ namespace NancyPerson
             else
                 res = null;
             return res;
+        }
+        public Person Find(Guid id)
+        {
+            Person pr = new Person();
+            if (sqlConn == null)
+                ConnectDB();
+            string sqlQuery = "SELECT * FROM Persons WHERE id = '" + id.ToString() + "';";
+            var res = sqlConn.Query<Person>(sqlQuery);
+            if (res.Count() != 0)
+            {
+                pr = res.First();
+                Console.WriteLine("Find person " + pr.name);
+            } else
+            {
+                Console.WriteLine("Person with ID<" + id.ToString() + "> not found");
+            }
+            return pr;
         }
 
         public string ListTable()
@@ -160,7 +151,7 @@ namespace NancyPerson
         public Person CreatePerson(string name, DateTime bDay)
         {
             Person pr = new Person();
-            if ((pr.Create(name, bDay) != null) && (InsertDapper(pr) != null))
+            if ((pr.Create(name, bDay) != null) && (Insert(pr) != null))
             {
                 return pr;
             }
@@ -168,33 +159,7 @@ namespace NancyPerson
                 return null;
             
         }
-        public Person Find(Guid id)
-        {
-            Person pr = new Person();
-            DataTable dTable = new DataTable();
-            pr.name = "";
-            if (!db_connected)
-            {
-                ConnectDB();
-            }
-            try
-            {
-                string sqlQuery = "SELECT * FROM Persons WHERE id = '" + id.ToString() + "';";
-                SQLiteDataAdapter adapter = new SQLiteDataAdapter(sqlQuery, sqlConn);
-                adapter.Fill(dTable);
-                if (dTable.Rows.Count > 0)
-                {
-                    pr.name = dTable.Rows[0].ItemArray[1].ToString();
-                    pr.age = Convert.ToInt32(dTable.Rows[0].ItemArray[2]);
-                }
-                Console.WriteLine(pr.name + " " + pr.age);
-            } 
-            catch (SQLiteException ex)
-            {
-                Console.WriteLine("Read error: " + ex.Message);
-            }
-            return pr;
-        }
+        
     }
 
     
@@ -209,33 +174,52 @@ namespace NancyPerson
         }
         Person pr = new Person();
         PersonRepository qr = new PersonRepository();
+       
 
         public TestNancy()
         {
+            var logger = new LoggerConfiguration().MinimumLevel.Verbose().WriteTo.Console().CreateLogger();
+
             Get("/", args =>
             {
-                return qr.ListTable();
+                string answer = "Person list:\n";
+                answer += qr.ListTable();
+                answer += "Total items: " + qr.ListTable().Count();
+                return answer;
             });
             Get("/{id}", args => 
             {
-                pr = qr.Find(args.id);
-                return "User: " + pr.name + " " + pr.age;
+                string answer = "";
+                
+                if (Guid.TryParse(args.id,out Guid id))
+                {
+                    pr = qr.Find(args.id);
+                    if (pr.name != null)
+                        answer = "Found: " + pr.name + " " + pr.bDay;
+                    else
+                        answer = "Not found";
+                }
+                else
+                    answer = "Invalid ID";
+                logger.Information(answer);
+                return answer;
             });
             Post("/person", args =>
             {
+                string answer;
                 JSON_pers jpr = this.Bind<JSON_pers>();
                 string name = jpr.name;
                 DateTime bDay = Convert.ToDateTime(jpr.BirthDay);
-                pr = qr.CreatePerson(name, bDay.Date);
+                pr = qr.CreatePerson(name, bDay);
                 if (pr != null)
                 {
-                    Console.WriteLine("Create ID:{" + pr.id + "}");
-                    return "Created";
+                    answer = "Create ID:{" + pr.id + "}";
                 } else
                 {
-                    Console.WriteLine("Bad request");
-                    return "Bad request";
+                    answer = "Bad request";
                 }
+                logger.Information(answer);
+                return answer;
             });
                         
         }
@@ -245,6 +229,8 @@ namespace NancyPerson
     {
         static void Main(string[] args)
         {
+            
+
             using (var host = new NancyHost(new Uri("http://localhost:8000")))
             {
                 
