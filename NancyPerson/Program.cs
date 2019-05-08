@@ -53,7 +53,20 @@ namespace NancyPerson
         static SQLiteConnection sqlConn = new SQLiteConnection();
         static SQLiteCommand sqlCmd = new SQLiteCommand();
         static bool db_connected = false;
+        
 
+        public void LoggerConfig()
+        {
+            Log.Logger = new LoggerConfiguration().MinimumLevel.Verbose().WriteTo.Console().CreateLogger();
+        }
+        public void LogInfo(string str)
+        {
+            Log.Information(str);
+        }
+        public void LogError(string str)
+        {
+            Log.Error(str);
+        }
 
         private int? ConnectDB()
         {
@@ -61,7 +74,8 @@ namespace NancyPerson
             if (!File.Exists(db_name))
             {
                 SQLiteConnection.CreateFile(db_name);
-                Console.WriteLine("File for DB created");
+                //Console.WriteLine("File for DB created");
+                LogInfo("File for DB created");
             }
             try
             {
@@ -73,16 +87,19 @@ namespace NancyPerson
                 if (sqlCmd.ExecuteNonQuery() != 0)
                 {
                     db_connected = true;
-                    Console.WriteLine("Table created");
+                    //Console.WriteLine("Table created");
+                    LogInfo("Table created");
                 }
                 else
                 {
-                    Console.WriteLine("Table not created");
+                    //Console.WriteLine("Table not created");
+                    LogError("Table not created");
                 }
             }
             catch (SQLiteException ex)
             {
-                Console.WriteLine("Error:" + ex.Message);
+                //Console.WriteLine("Error:" + ex.Message);
+                LogError("Error:" + ex.Message);
                 return null;
             }
             return 0;
@@ -97,7 +114,8 @@ namespace NancyPerson
             var qr = sqlConn.Query<Person>(sqlQuery);
             if (qr != null)
             {
-                Console.WriteLine("Person " + pr.name + " inserted");
+                //Console.WriteLine("Person " + pr.name + " inserted");
+                //LogInfo("Person " + pr.name + " inserted");
             }
             else
                 res = null;
@@ -113,10 +131,10 @@ namespace NancyPerson
             if (res.Count() != 0)
             {
                 pr = res.First();
-                Console.WriteLine("Find person " + pr.name);
+//                Console.WriteLine("Find person " + pr.name);
             } else
             {
-                Console.WriteLine("Person with ID<" + id.ToString() + "> not found");
+//                Console.WriteLine("Person with ID<" + id.ToString() + "> not found");
             }
             return pr;
         }
@@ -124,7 +142,7 @@ namespace NancyPerson
         public string ListTable()
         {
             string pList = "";
-            DataTable dTable = new DataTable();
+            int count = 0;
             if (!db_connected)
             {
                 ConnectDB();
@@ -132,18 +150,21 @@ namespace NancyPerson
             try
             {
                 string sqlQuery = "SELECT * FROM Persons;";
-                SQLiteDataAdapter adapter = new SQLiteDataAdapter(sqlQuery, sqlConn);
-                adapter.Fill(dTable);
-                for (int i = 0; i < dTable.Rows.Count; i++)
+                var res = sqlConn.Query<Person>(sqlQuery);
+                if (res.Count() > 0)
                 {
-                    string str = "";
-                    for (int j = 0; j < 4; j++)
-                        str += dTable.Rows[i].ItemArray[j].ToString() + " ";
-                    pList += str + "\n";
+                    foreach (Person pr in res)
+                    {
+                        string str = (++count).ToString() + " : " + pr.id + " : " + pr.name + " : " + pr.bDay;
+                        pList += str + "\n";
+                    }
                 }
+                else
+                    pList = "Empty\n";
             } catch (SQLiteException ex)
             {
-                Console.WriteLine("Insert error: " + ex.Message);
+                //Console.WriteLine("List error: " + ex.Message);
+                LogError("List error: " + ex.Message);
                 pList = ex.Message;
             }
             return pList;
@@ -178,47 +199,55 @@ namespace NancyPerson
 
         public TestNancy()
         {
-            var logger = new LoggerConfiguration().MinimumLevel.Verbose().WriteTo.Console().CreateLogger();
+            //var logger = new LoggerConfiguration().MinimumLevel.Verbose().WriteTo.Console().CreateLogger();
+            qr.LoggerConfig();
 
             Get("/", args =>
             {
                 string answer = "Person list:\n";
                 answer += qr.ListTable();
-                answer += "Total items: " + qr.ListTable().Count();
                 return answer;
             });
-            Get("/{id}", args => 
+            Get("/person/{id}", args => 
             {
                 string answer = "";
-                
-                if (Guid.TryParse(args.id,out Guid id))
+
+                if (Guid.TryParse(args.id, out Guid id))
                 {
                     pr = qr.Find(args.id);
                     if (pr.name != null)
+                    {
                         answer = "Found: " + pr.name + " " + pr.bDay;
+                        qr.LogInfo(answer);
+                    }
                     else
+                    {
                         answer = "Not found";
+                        qr.LogError(answer);
+                    }
                 }
                 else
-                    answer = "Invalid ID";
-                logger.Information(answer);
+                {
+                    answer = "Invalid ID <" + id.ToString() + ">";
+                    qr.LogError(answer);
+                }
                 return answer;
             });
             Post("/person", args =>
             {
-                string answer;
+                string answer,log_str;
                 JSON_pers jpr = this.Bind<JSON_pers>();
-                string name = jpr.name;
-                DateTime bDay = Convert.ToDateTime(jpr.BirthDay);
-                pr = qr.CreatePerson(name, bDay);
+                pr = qr.CreatePerson(jpr.name, Convert.ToDateTime(jpr.BirthDay));
                 if (pr != null)
                 {
                     answer = "Create ID:{" + pr.id + "}";
+                    log_str = "Create person ID:{" + pr.id + "} name <" + pr.name + "> birthday <" + pr.bDay + "> age <" + pr.age.ToString() + ">";
+                    qr.LogInfo(log_str);
                 } else
                 {
                     answer = "Bad request";
+                    qr.LogError(answer);
                 }
-                logger.Information(answer);
                 return answer;
             });
                         
