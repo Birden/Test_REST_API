@@ -46,13 +46,13 @@ namespace Querys
         static SQLiteCommand sqlCmd = new SQLiteCommand();
         static bool db_connected = false;
 
+        
         private int? ConnectDB()
         {
-            int? res = 1;
+            int? res = 0;
             if (!File.Exists(db_name))
             {
                 SQLiteConnection.CreateFile(db_name);
-                //Console.WriteLine("File for DB created");
             }
             try
             {
@@ -77,6 +77,10 @@ namespace Querys
             return res;
         }
 
+        //      Вставляет запись в таблицу
+        //      возвращает 0 в случае успеха
+        //      либо null
+        //
         public int? Insert(Person pr)
         {
             int? res = 0;
@@ -90,6 +94,9 @@ namespace Querys
             }
             return res;
         }
+        //      Ищем запись в базе по ID
+        //      возвращает Person, либо null
+        //
         public Person Find(Guid id)
         {
             Person pr = new Person();
@@ -103,7 +110,9 @@ namespace Querys
             }
             return pr;
         }
-
+        //      Для тестирования, возвращает все записи в таблице, 
+        //      либо "Empty", если таблица пустая
+        //
         public string ListTable()
         {
             string pList = "";
@@ -129,11 +138,14 @@ namespace Querys
             }
             catch (SQLiteException ex)
             {
-//                LogError("List error: " + ex.Message);
                 pList = ex.Message;
             }
             return pList;
         }
+        //      Создание сущности <Person> в таблице, по имени и дате рождения
+        //      name д.б. не пустой и возраст не д.б. > 120лет
+        //      возвращает <Person>, либо null
+        //
         public Person CreatePerson(string name, DateTime bDay)
         {
             Person pr = new Person();
@@ -143,7 +155,6 @@ namespace Querys
             }
             else
                 return null;
-
         }
 
     }

@@ -49,7 +49,7 @@ namespace NancyPerson
                     pr = qr.Find(args.id);
                     if (pr.name != null)
                     {
-                        answer = "Found: " + pr.name + " " + pr.bDay;
+                        answer = "OK {\"Name\":" + "\""+pr.name + "\"" + ",\"BirthDay\":" + "\""+ pr.bDay+"\"}";
                         LogInfo(answer);
                     }
                     else
