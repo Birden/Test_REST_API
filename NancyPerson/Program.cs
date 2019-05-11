@@ -4,7 +4,7 @@ using Nancy;
 using Nancy.Hosting.Self;
 using Nancy.ModelBinding;
 using Serilog;
-using Serilog.Sinks.SystemConsole;
+using Serilog.Sinks.File;
 using Querys;
 using Topshelf;
 
@@ -28,11 +28,15 @@ namespace NancyPerson
         public void LogError(string str)
         {
             Log.Error(str);
+            
         }
 
         public TestNancy()
         {
-            Log.Logger = new LoggerConfiguration().MinimumLevel.Verbose().WriteTo.Console().CreateLogger();
+            Log.Logger = new LoggerConfiguration().MinimumLevel.Verbose()
+                .WriteTo.Console()
+                .WriteTo.File("log.txt",rollingInterval:RollingInterval.Day)
+                .CreateLogger();
             
 
             Get("/", args =>
