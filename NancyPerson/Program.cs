@@ -6,6 +6,7 @@ using Nancy.ModelBinding;
 using Serilog;
 using Serilog.Sinks.SystemConsole;
 using Querys;
+using Topshelf;
 
 namespace NancyPerson
 {
@@ -69,32 +70,53 @@ namespace NancyPerson
             {
                 string answer,log_str;
                 JSON_pers jpr = this.Bind<JSON_pers>();
-                pr = qr.CreatePerson(jpr.name, Convert.ToDateTime(jpr.BirthDay));
-                if (pr != null)
+                if (jpr != null)
                 {
-                    answer = "Create ID:{" + pr.id + "}";
-                    log_str = "Create person ID:{" + pr.id + "} name <" + pr.name + "> birthday <" + pr.bDay + "> age <" + pr.age.ToString() + ">";
-                    LogInfo(log_str);
-                } else
-                {
-                    answer = "Bad request";
-                    LogError(answer);
+                    pr = qr.CreatePerson(jpr.name, Convert.ToDateTime(jpr.BirthDay));
+                    if (pr != null)
+                    {
+                        answer = "Create ID:{" + pr.id + "}";
+                        log_str = "Create person ID:{" + pr.id + "} name <" + pr.name + "> birthday <" + pr.bDay + "> age <" + pr.age.ToString() + ">";
+                        LogInfo(log_str);
+                    }
+                    else
+                    {
+                        answer = "Bad request";
+                        LogError(answer);
+                    }
                 }
+                else
+                    answer = "Bad request";
                 return answer;
             });
                         
         }
     }
+    class PersonService
+    {
+        private NancyHost host;
+
+        public void Start()
+        {
+            host = new NancyHost(new Uri("http://localhost:8000"));
+            host.Start();
+            Console.WriteLine("Nancy host start listening on localhost:8000");
+            Process.Start("http://localhost:8000");
+        }
+        public void Stop()
+        {
+            host.Stop();
+            Console.WriteLine("Process stopped");
+        }
+    }
+
 
     class Program
     {
-        static void Main(string[] args)
+        static public void AppStart()
         {
-            
-
             using (var host = new NancyHost(new Uri("http://localhost:8000")))
             {
-                
                 try
                 {
                     host.Start();
@@ -109,7 +131,7 @@ namespace NancyPerson
                 {
                     Process.Start("http://localhost:8000");
                 }
-                catch (Exception ex )
+                catch (Exception ex)
                 {
                     Console.WriteLine(ex.Message);
                 }
@@ -117,6 +139,25 @@ namespace NancyPerson
             }
             Console.WriteLine("Process stopped");
         }
-
+        static public void ServiceStart()
+        {
+            HostFactory.Run(x =>
+            {
+                x.Service<PersonService>(s =>
+                {
+                    s.ConstructUsing(name => new PersonService());
+                    s.WhenStarted(tc => tc.Start());
+                    s.WhenStopped(tc => tc.Stop());
+                });
+                x.RunAsLocalService();
+                x.SetDescription("Person service host");
+                x.SetServiceName("a_ service name");
+            });
+        }
+        static void Main(string[] args)
+        {
+            //AppStart();
+            ServiceStart();
+        }
     }
 }
