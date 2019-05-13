@@ -41,7 +41,7 @@ namespace NancyPerson
 
             Get("/", args =>
             {
-                string answer = "Person list:\n";
+                string answer = "Persons list:\n";
                 answer += qr.ListTable();
                 return answer;
             });
@@ -104,7 +104,7 @@ namespace NancyPerson
         {
             host = new NancyHost(new Uri("http://localhost:8000"));
             host.Start();
-            Console.WriteLine("Nancy host start listening on localhost:8000");
+            Console.WriteLine("Person sercive start listening on localhost:8000");
             Process.Start("http://localhost:8000");
         }
         public void Stop()
@@ -117,32 +117,6 @@ namespace NancyPerson
 
     class Program
     {
-        static public void AppStart()
-        {
-            using (var host = new NancyHost(new Uri("http://localhost:8000")))
-            {
-                try
-                {
-                    host.Start();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                }
-
-                Console.WriteLine("Nancy host start listening on localhost:8000");
-                try
-                {
-                    Process.Start("http://localhost:8000");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                }
-                Console.ReadKey();
-            }
-            Console.WriteLine("Process stopped");
-        }
         static public void ServiceStart()
         {
             HostFactory.Run(x =>
@@ -155,12 +129,11 @@ namespace NancyPerson
                 });
                 x.RunAsLocalService();
                 x.SetDescription("Person service host");
-                x.SetServiceName("a_ service name");
+                x.SetServiceName("Person service");
             });
         }
         static void Main(string[] args)
         {
-            //AppStart();
             ServiceStart();
         }
     }

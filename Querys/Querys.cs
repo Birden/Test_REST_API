@@ -41,10 +41,11 @@ namespace Querys
 
     public class PersonRepository : IPersonRepository
     {
-        static string db_name = "person_db.sqlite";
-        static SQLiteConnection sqlConn = new SQLiteConnection();
-        static SQLiteCommand sqlCmd = new SQLiteCommand();
-        static bool db_connected = false;
+        private string db_name = "person_db.sqlite";
+        private SQLiteConnection sqlConn = new SQLiteConnection();
+        private SQLiteCommand sqlCmd = new SQLiteCommand();
+        private bool db_connected = false;
+        public string msg;
 
         
         private int? ConnectDB()
@@ -69,9 +70,11 @@ namespace Querys
                 {
                     res = null;
                 }
+                msg = "OK";
             }
             catch (SQLiteException ex)
             {
+                msg = ex.Message;
                 return null;
             }
             return res;
@@ -86,11 +89,17 @@ namespace Querys
             int? res = 0;
             if (sqlConn == null)
                 ConnectDB();
-            string sqlQuery = "INSERT INTO Persons (id,name,bDay,age) values ('" + pr.id + "','" + pr.name + "','" + pr.bDay + "'," + pr.age.ToString() + ");";
-            var qr = sqlConn.Query<Person>(sqlQuery);
-            if (qr == null)
+            try
             {
-                res = null;
+                string sqlQuery = "INSERT INTO Persons (id,name,bDay,age) values ('" + pr.id + "','" + pr.name + "','" + pr.bDay + "'," + pr.age.ToString() + ");";
+                var qr = sqlConn.Query<Person>(sqlQuery);
+                if (qr == null)
+                    res = null;
+                msg = "OK";
+            }
+            catch (SQLiteException ex)
+            {
+                msg = ex.Message;
             }
             return res;
         }
@@ -102,11 +111,16 @@ namespace Querys
             Person pr = new Person();
             if (sqlConn == null)
                 ConnectDB();
-            string sqlQuery = "SELECT * FROM Persons WHERE id = '" + id.ToString() + "';";
-            var res = sqlConn.Query<Person>(sqlQuery);
-            if (res.Count() != 0)
+            try
             {
-                pr = res.First();
+                string sqlQuery = "SELECT * FROM Persons WHERE id = '" + id.ToString() + "';";
+                var res = sqlConn.Query<Person>(sqlQuery);
+                if (res.Count() != 0)
+                    pr = res.First();
+                msg = "OK";
+            } catch (SQLiteException ex)
+            {
+                msg = ex.Message;
             }
             return pr;
         }
